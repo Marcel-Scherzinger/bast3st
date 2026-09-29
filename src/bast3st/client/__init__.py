@@ -3,19 +3,15 @@ import pathlib
 import sys
 import json
 import zipfile
-import http.client
 from os import path
 from pathlib import Path
+from bast3st.client.client import Client
 from bast3st.client.report import SpecReport
 from bast3st.spec import Bast3StSpec
 
 
 def get_program_name():
     return path.basename(str(getattr(sys.modules["__main__"], "__file__", "")))
-
-
-def get_server_url() -> tuple[str, int]:
-    return ("localhost", 42139)
 
 
 def run_export(spec: Bast3StSpec, args):
@@ -28,27 +24,13 @@ def debug_spec(
     program: dict, spec: Bast3StSpec, program_name: str | None = None
 ) -> SpecReport:
     program_name = program_name or get_program_name()
-    host, port = get_server_url()
-    conn = http.client.HTTPConnection(host, port)
-    conn.request(
-        "POST",
-        "/api/v2/debug",
-        body=json.dumps(
-            {
-                "program": program,
-                "agent": f"bast3st/{program_name}",
-                "spec": json.loads(spec.to_json()),
-            }
-        ),
-        headers={"Content-Type": "application/json"},
-    )
-    response = conn.getresponse()
-    read_body = response.read()
-    read_json = json.loads(read_body)
 
-    conn.close()
+    client = Client.require()
+    rep = client.debug_spec(program=program, spec=spec)
+    if not isinstance(rep, SpecReport):
+        raise ValueError(f"{rep!r}")
 
-    return SpecReport.from_json(read_json)
+    return rep
 
 
 def run_test(spec: Bast3StSpec, args):

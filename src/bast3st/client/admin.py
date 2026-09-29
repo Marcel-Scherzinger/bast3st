@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-import dataclasses
 import logging
 import os
-import http.client
 from typing import Literal
-import urllib3
 import urllib.parse
+
+from bast3st.client.helpers import send_request
 
 
 @dataclass(frozen=True)
@@ -47,7 +46,7 @@ class AdminClient:
             logging.error(f"Admin server at {url!r} misbehaved{extra}: {e}")
 
     def check_health(self) -> int:
-        resp = urllib3.request(
+        resp = send_request(
             "get",
             urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/health"),
         )
@@ -55,34 +54,34 @@ class AdminClient:
 
     def register_user(self, username: str) -> str | AdminRegisterUserError:
         """Returns the created password for the user or an error"""
-        resp = urllib3.request(
+        resp = send_request(
             "post",
             urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/register"),
-            json={"user": username},
+            json_body={"user": username},
         )
         if resp.status == 200:
-            return resp.data.decode("utf8")
+            return resp.read().decode("utf8")
         if resp.status == 409:
             return AdminRegisterUserError(kind="already-there")
         if resp.status == 500:
             return AdminRegisterUserError(kind="server")
         return AdminRegisterUserError(
-            kind="unknown", data=dict(status=resp.status, data=resp.data)
+            kind="unknown", data=dict(status=resp.status, data=resp.read())
         )
 
     def reset_user_password(self, username: str) -> str | AdminResetUserPwdError:
         """Returns the new password for the user or an error"""
-        resp = urllib3.request(
+        resp = send_request(
             "post",
             urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/pwdreset"),
-            json={"user": username},
+            json_body={"user": username},
         )
         if resp.status == 200:
-            return resp.data.decode("utf8")
+            return resp.read().decode("utf8")
         if resp.status == 409:
             return AdminResetUserPwdError(kind="not-found")
         if resp.status == 500:
             return AdminResetUserPwdError(kind="server")
         return AdminResetUserPwdError(
-            kind="unknown", data=dict(status=resp.status, data=resp.data)
+            kind="unknown", data=dict(status=resp.status, data=resp.read())
         )
