@@ -22,3 +22,4 @@ from bast3st.actions import (
     end_this_test_immediatly,
     fail_this_test_immediatly,
 )
+from bast3st.client import main

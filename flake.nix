@@ -48,6 +48,7 @@
           ];
           shellHook = ''
             export INCLUDE_TODOS=""
+            export BAST3ST_ADMIN_SERVER="http://localhost:42039/"
           '';
         };
         devShells.full = pkgs.mkShell {
@@ -117,7 +118,7 @@
           };
 
           bast3st-full = pkgs.stdenv.mkDerivation {
-            pname = "${project.pyproject.project.name}-full";
+            pname = "${project.pyproject.project.name}";
             version = project.pyproject.project.version;
 
             src = ./src; # not really needed
