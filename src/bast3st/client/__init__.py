@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import shutil
 import sys
 import json
 import zipfile
@@ -46,7 +47,8 @@ def run_test(spec: Bast3StSpec, args):
 
     rep = debug_spec(program=program, spec=spec)
     if args.format == "pretty":
-        print(rep.to_pretty(60))
+        width = shutil.get_terminal_size().columns - 5
+        print(rep.to_pretty(width))
     else:
         print(repr(rep))
 

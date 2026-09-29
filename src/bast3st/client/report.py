@@ -381,5 +381,5 @@ def output_items(
 
 def output_list(l: list, width: int, label: str):
     if l:
-        return label + ":\n" + indent(output_items(l, width=width), prefix="  ")
+        return label + ":\n" + indent(output_items(l, width=width - 2), prefix="  ")
     return ""
