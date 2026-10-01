@@ -1,10 +1,14 @@
 import argparse
+import pathlib
+import shutil
 
 from bast3st.client.admin import AdminClient
 import logging
 import os
 
 from bast3st.client.client import Client
+from bast3st.client.helpers import parse_exercise_id
+from bast3st.client.report import SpecReport
 
 
 EXIT_SERVER = 12
@@ -41,7 +45,7 @@ def run_reset_pwd(args) -> int:
             answer = input(reset)
         else:
             answer = input(
-                f"Confirm chaning password of user={username} to: {reset} [y/N]: "
+                f"Confirm changing password of user={username} to: {reset} [y/N]: "
             )
         if answer.lower() == "y":
             if x := client.confirm_password_reset(
@@ -86,13 +90,28 @@ def run_admin_users(args) -> int:
     return 13
 
 
+def run_submit(args):
+    user, slot = args.exercise
+    client = Client.require(url=args.url)
+    rep = client.submit_program(user=user, slot=slot, program=args.program)
+    if isinstance(rep, SpecReport):
+        if args.format == "pretty":
+            width = args.width or (shutil.get_terminal_size().columns)
+            print(rep.to_pretty(width))
+        else:
+            print(repr(rep))
+    else:
+        logging.error(f"{rep}")
+        exit(13)
+
+
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-q",
         "--quiet",
         action="store_true",
-        help="Quiet output on stdout, only data without labels",
+        help="quiet output on stdout, only data without labels",
     )
     parser.add_argument("-u", "--url", type=str, required=False)
 
@@ -106,10 +125,25 @@ def run():
     sub_admin_users.add_argument("-a", "--action", choices=["register", "reset"])
     sub_admin_users.set_defaults(func=run_admin_users)
 
-    sub_pwd = subparsers.add_parser("reset-password")
+    sub_pwd = subparsers.add_parser("reset-password", help="reset own password")
     sub_pwd.add_argument("--username", type=str, help="defaults to 'BAST3ST_USERNAME'")
     sub_pwd.add_argument("--confirm", action="store_true")
     sub_pwd.set_defaults(func=run_reset_pwd)
+
+    sub_submit = subparsers.add_parser(
+        "submit", help="submit a program to a specific user/slot exercise"
+    )
+    sub_submit.add_argument(
+        "-f", "--format", choices=["pretty", "repr"], required=False, default="pretty"
+    )
+    sub_submit.add_argument(
+        "--width", type=int, help="terminal width to use, defaults to available"
+    )
+    sub_submit.add_argument("program", type=pathlib.Path)
+    sub_submit.add_argument(
+        "-e", "--exercise", type=parse_exercise_id, metavar="USER/SLOT", required=True
+    )
+    sub_submit.set_defaults(func=run_submit)
 
     parsed = parser.parse_args()
     exit(parsed.func(parsed))

@@ -48,7 +48,6 @@
           ];
           shellHook = ''
             export INCLUDE_TODOS=""
-            export BAST3ST_ADMIN_SERVER="http://localhost:42039/"
             export BAST3ST_SERVER="http://localhost:42139/"
           '';
         };

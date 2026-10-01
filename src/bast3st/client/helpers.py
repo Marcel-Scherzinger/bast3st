@@ -1,3 +1,4 @@
+import argparse
 import urllib.parse
 import http.client
 import json
@@ -39,3 +40,10 @@ def get_spec_json(doc: dict | Bast3StSpec) -> dict:
     if isinstance(doc, Bast3StSpec):
         return json.loads(doc.to_json())
     return doc
+
+
+def parse_exercise_id(value: str):
+    parts = value.split("/", 1)
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("id has to have the form USER/SLOT")
+    return tuple(parts)

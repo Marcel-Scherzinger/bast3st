@@ -1,3 +1,5 @@
+from os import strerror
+from sys import is_finalizing
 from typing import Any, Literal, Mapping
 
 import dataclasses
@@ -36,8 +38,11 @@ def box_sym(rel: Relation, side: Literal["nw", "ne", "sw", "se", "-", "|"]):
     return "*"
 
 
-def indent(text: str, prefix: str):
-    return textwrap.indent(text, prefix)
+def indent(text: str, prefix: str, suffix: str = "", suffix_fill_width: int = 0):
+    out = ""
+    for line in text.splitlines():
+        out += prefix + line.ljust(suffix_fill_width) + suffix + "\n"
+    return out
 
 
 def wrap(text: str, width: int, prefix: str = "", suffix: str = ""):
@@ -46,6 +51,12 @@ def wrap(text: str, width: int, prefix: str = "", suffix: str = ""):
         for line in lines.splitlines():
             out += prefix + line.ljust(width) + suffix + "\n"
     return out
+
+
+def add_block(obj, label: str, width: int) -> str:
+    if hasattr(obj, "to_pretty"):
+        return label + ":\n" + indent(obj.to_pretty(width - 2), prefix=" " * 2)
+    return label + ":\n" + wrap(str(obj), width=width - 2, prefix=" " * 2)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -78,15 +89,15 @@ class RuntimeCriterion:
         dash = box_sym("only", "-")
         bar = box_sym("only", "|")
 
-        line = nw + dash + " " + status + " " + dash * (width - 2 - len(status)) + ne
+        line = nw + dash + " " + status + " " + dash * (width - 5 - len(status)) + ne
 
         content = attributes + (
             f"\n{'-' * (width - 1)}\n{self.failure_explaination}"
             if self.failure_explaination is not None
             else ""
         )
-        content = wrap(content, width=width - 1, prefix=bar + " ", suffix=" " + bar)
-        content += sw + dash + dash * width + se + "\n"
+        content = wrap(content, width=width - 4, prefix=bar + " ", suffix=" " + bar)
+        content += sw + dash + dash * (width - 3) + se + "\n"
 
         return f"{line}\n{content}"
 
@@ -106,24 +117,42 @@ class Message:
         nw = box_sym(relation, "nw")
         ne = box_sym(relation, "ne")
 
-        fill = width - len(self.severity) - 2
+        fill = width - len(self.severity) - 6
         text = f"{nw}─[{self.severity}]{'─' * fill}─{ne}\n" + wrap(
-            self.text, width=width, prefix="│ ", suffix=" │"
+            self.text, width=width - 4, prefix="│ ", suffix=" │"
         )
         if relation in ("bottom", "only"):
-            text += "└─" + ("─" * width) + "─┘"
+            text += "└─" + ("─" * (width - 4)) + "─┘"
 
         return text
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class TestStatus:
-    d: dict
+    is_fulfilled: bool
+    fexp: str | None = None
+    inner: dict
 
     @classmethod
     def from_json(cls, val: dict):
-        # TODO
-        return cls(d=val)
+        f = val["criterion"]["fulfilled"]
+        i = val["criterion"]["inner"]
+        if "Ok" in f:
+            return cls(is_fulfilled=True, inner=i)
+        else:
+            return cls(is_fulfilled=False, inner=i, fexp=f.get("Err", None))
+
+    def to_pretty(self, width: int) -> str:
+        text = ""
+        if self.is_fulfilled:
+            text += "This test passed!\n"
+        else:
+            text += "This test failed :(  " + (self.fexp or "") + "\n"
+        text += str(self.inner)
+        return wrap(text, width)
+
+    def __str__(self) -> str:
+        return str(self.is_fulfilled) + f" || {self.fexp} || " + str(self.inner)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -143,6 +172,20 @@ class Rundata:
             lists=val.get("lists", {}).get("val", {}),
             variables=val.get("variables", {}).get("val", {}),
         )
+
+    def to_pretty(self, width: int):
+        text = ""
+        if len(self.input):
+            text += add_block(self.input, label="input", width=width)
+        if len(self.output):
+            text += add_block(self.output, label="output", width=width)
+        if len(self.randoms):
+            text += add_block(self.randoms, label="randoms", width=width)
+        if len(self.lists):
+            text += add_block(self.lists, label="lists", width=width)
+        if len(self.variables):
+            text += add_block(self.variables, label="variables", width=width)
+        return text
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -272,10 +315,42 @@ class MainTest:
             hooks=MainTestHooks.from_json(val.get("hooks", {})),
         )
 
-    def to_pretty(self, width: int, _relation):
-        text = self.title + f"\n{self!r}"
-        # TODO
-        return wrap(text, width=width)
+    def to_pretty(self, width: int, relation: Relation = None):
+        nw = box_sym(relation, "nw")
+        ne = box_sym(relation, "ne")
+        lver = box_sym(relation, "|")
+        rver = box_sym(relation, "|")
+
+        if not self.status.is_fulfilled:
+            lver = "█"
+
+        text = f"{nw}─{'─' * (width - 4)}─{ne}\n" + indent(
+            self._inner_to_pretty(width - 4),
+            prefix=lver + " ",
+            suffix=" " + rver,
+            suffix_fill_width=width - 4,
+        )
+        if relation in ("bottom", "only"):
+            text += "└─" + ("─" * (width - 4)) + "─┘"
+        return text
+
+    def _inner_to_pretty(self, width: int) -> str:
+        text = wrap(self.title, width=width)
+        # text += (" " if self.status.is_fulfilled else "!") * min(
+        #     width, len(self.title)
+        # ) + "\n"
+        text += self.status.to_pretty(width)
+        text += output_list(self.messages, width, label="messages")
+        text += output_list(self.hooks.before_main, label="before-main", width=width)
+        text += add_block(self.data, label="data", width=width)
+        text += output_list(
+            self.hooks.before_alternatives, label="before-alternatives", width=width
+        )
+        text += output_list(self.alternatives, width, label="alternatives")
+        text += output_list(
+            self.hooks.after_complete, label="after-complete", width=width
+        )
+        return text
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

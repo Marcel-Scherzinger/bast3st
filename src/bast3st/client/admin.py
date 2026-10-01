@@ -29,7 +29,11 @@ class AdminClient:
 
     @classmethod
     def new(cls, url: str | None = None) -> AdminClient | None:
-        url = url or os.environ.get("BAST3ST_ADMIN_SERVER", None)
+        url = (
+            url
+            or os.environ.get("BAST3ST_ADMIN_SERVER", None)
+            or "http://localhost:42039"
+        )
         if url is None or url.strip() == "":
             return None
         client = AdminClient(url)
@@ -48,7 +52,7 @@ class AdminClient:
     def check_health(self) -> int:
         resp = send_request(
             "get",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/health"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/health"),
         )
         return resp.status
 
@@ -56,7 +60,7 @@ class AdminClient:
         """Returns the created password for the user or an error"""
         resp = send_request(
             "post",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/register"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/register"),
             json_body={"user": username},
         )
         if resp.status == 200:
@@ -73,7 +77,7 @@ class AdminClient:
         """Returns the new password for the user or an error"""
         resp = send_request(
             "post",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/admin/v2/pwdreset"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/pwdreset"),
             json_body={"user": username},
         )
         if resp.status == 200:

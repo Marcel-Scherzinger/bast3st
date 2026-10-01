@@ -18,6 +18,18 @@ class DebugSpecError:
 
 
 @dataclass(frozen=True)
+class UploadSpecError:
+    kind: Literal["password", "spec", "unknown", "server"]
+    data: object = None
+
+
+@dataclass(frozen=True)
+class SubmitProgramError:
+    kind: Literal["user/slot", "spec", "program", "unknown", "server"]
+    data: object = None
+
+
+@dataclass(frozen=True)
 class PasswordResetError:
     kind: Literal["forbidden", "unknown", "server"]
     data: object = None
@@ -57,17 +69,45 @@ class Client:
     def require(cls, url: str | None = None) -> Client:
         c = cls.new(url)
         if c is None:
-            raise ValueError(
+            logging.error(
                 f"no client available, consider setting 'BAST3ST_SERVER' env-var: {url=}"
             )
+            exit(13)
         return c
 
     def check_health(self) -> int:
         resp = send_request(
             "get",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/v2/health"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/health"),
         )
         return resp.status
+
+    def upload_spec(
+        self, *, user: str, password: str, slot: str, spec: dict | Bast3StSpec
+    ) -> UploadSpecError | None:
+        spec = get_spec_json(spec)
+
+        resp = send_request(
+            "post",
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/spec/upload"),
+            json_body={
+                "spec": spec,
+                "username": user,
+                "slot": slot,
+                "password": password,
+            },
+        )
+        if resp.status == 201:
+            return None
+        if resp.status == 403:
+            return UploadSpecError("password", resp.read())
+        if resp.status == 424:
+            return UploadSpecError("spec", resp.read())
+        if resp.status == 500:
+            return UploadSpecError("server", resp.read())
+        return UploadSpecError(
+            kind="unknown", data=dict(status=resp.status, data=resp.read())
+        )
 
     def debug_spec(
         self,
@@ -83,7 +123,7 @@ class Client:
 
         resp = send_request(
             "post",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/v2/debug"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/spec/debug"),
             json_body={
                 "program": program,
                 "spec": spec,
@@ -103,12 +143,49 @@ class Client:
             kind="unknown", data=dict(status=resp.status, data=resp.read())
         )
 
+    def submit_program(
+        self,
+        *,
+        user: str,
+        slot: str,
+        program: dict | pathlib.Path | str,
+        agent: str = "cli",
+        session: str | None = None,
+    ) -> SpecReport | SubmitProgramError:
+        """Submit a program to a given user/slot"""
+        program = get_program_json(program)
+
+        resp = send_request(
+            "post",
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/program/run"),
+            json_body={
+                "program": program,
+                "user": user,
+                "slot": slot,
+                "agent": agent,
+                "session": session,
+            },
+        )
+        if resp.status == 200:
+            return SpecReport.from_json(json.load(resp))
+        if resp.status == 400:
+            return SubmitProgramError("user/slot", resp.read())
+        if resp.status == 422:
+            return SubmitProgramError("program", resp.read())
+        if resp.status == 424:
+            return SubmitProgramError("spec", resp.read())
+        if resp.status == 500:
+            return SubmitProgramError("server", resp.read())
+        return SubmitProgramError(
+            kind="unknown", data=dict(status=resp.status, data=resp.read())
+        )
+
     def start_password_reset(
         self, username: str, password: str
     ) -> str | PasswordResetError:
         resp = send_request(
             "post",
-            urllib.parse.urljoin(self.parsed_url.geturl(), "/api/v2/account/pwdreset"),
+            urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/account/pwdreset"),
             json_body={"username": username, "password": password},
         )
 
@@ -127,7 +204,7 @@ class Client:
         resp = send_request(
             "post",
             urllib.parse.urljoin(
-                self.parsed_url.geturl(), "/api/v2/account/confirmreset"
+                self.parsed_url.geturl(), "/v2/api/account/confirmreset"
             ),
             json_body={
                 "username": username,

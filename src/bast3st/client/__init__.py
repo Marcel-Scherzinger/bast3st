@@ -1,12 +1,14 @@
 import argparse
+import logging
+import os
 import pathlib
 import shutil
 import sys
-import json
-import zipfile
 from os import path
 from pathlib import Path
+from bast3st.cli import EXIT_ERROR
 from bast3st.client.client import Client
+from bast3st.client.helpers import get_program_json, parse_exercise_id
 from bast3st.client.report import SpecReport
 from bast3st.spec import Bast3StSpec
 
@@ -22,11 +24,11 @@ def run_export(spec: Bast3StSpec, args):
 
 
 def debug_spec(
-    program: dict, spec: Bast3StSpec, program_name: str | None = None
+    program: dict, spec: Bast3StSpec, program_name: str | None = None, url=None
 ) -> SpecReport:
     program_name = program_name or get_program_name()
 
-    client = Client.require()
+    client = Client.require(url)
     rep = client.debug_spec(program=program, spec=spec)
     if not isinstance(rep, SpecReport):
         raise ValueError(f"{rep!r}")
@@ -36,29 +38,40 @@ def debug_spec(
 
 def run_test(spec: Bast3StSpec, args):
     program_path: pathlib.Path = args.program
+    program = get_program_json(program_path)
 
-    if program_path.suffix == "json":
-        with open(program_path, mode="r", encoding="utf8") as f:
-            program = json.load(f)
-    else:
-        with zipfile.ZipFile(program_path) as f:
-            program = f.read("project.json")
-            program = json.loads(program)
-
-    rep = debug_spec(program=program, spec=spec)
+    rep = debug_spec(program=program, spec=spec, url=args.url)
     if args.format == "pretty":
-        width = shutil.get_terminal_size().columns - 5
+        width = args.width or (shutil.get_terminal_size().columns)
         print(rep.to_pretty(width))
     else:
         print(repr(rep))
 
 
 def run_upload(spec, args):
-    print(args)
+    user, slot = args.exercise
+    client = Client.require(args.url)
+    username = user or os.environ.get("BAST3ST_USERNAME", None)
+    password = os.environ.get("BAST3ST_PASSWORD", None)
+
+    if username is None:
+        logging.error("you have to specify a username or set 'BAST3ST_USERNAME'")
+        return EXIT_ERROR
+    if password is None:
+        logging.error("you have to set 'BAST3ST_PASSWORD'")
+        return EXIT_ERROR
+
+    resp = client.upload_spec(spec=spec, user=user, slot=slot, password=password)
+    if resp is None:
+        logging.info(f"Successfully uploaded specification to {user}/{slot}")
+        return 0
+    logging.error(repr(resp))
+    return EXIT_ERROR
 
 
-def main(spec: Bast3StSpec, password_env=None):
+def main(spec: Bast3StSpec):
     parser = argparse.ArgumentParser()
+    parser.add_argument("-u", "--url", type=str, required=False)
 
     subparsers = parser.add_subparsers(required=True)
     ######################
@@ -67,15 +80,21 @@ def main(spec: Bast3StSpec, password_env=None):
     sub_upload = subparsers.add_parser(
         "upload", help="upload the specification to the server"
     )
+    sub_upload.add_argument(
+        "-e", "--exercise", type=parse_exercise_id, metavar="USER/SLOT", required=True
+    )
     sub_upload.set_defaults(func=lambda args: run_upload(spec, args))
     ######################
-    # Test
+    # Debug
     ######################
     sub_test = subparsers.add_parser(
-        "test", help="test this spec with a sb3 file and print the report"
+        "debug", help="debug this spec with a sb3 file and print the report"
     )
     sub_test.set_defaults(func=lambda args: run_test(spec, args))
     sub_test.add_argument("program", type=Path, help="Path to *.sb3 or project.json")
+    sub_test.add_argument(
+        "--width", type=int, help="terminal width to use, defaults to available"
+    )
     sub_test.add_argument(
         "-f", "--format", choices=["pretty", "repr"], required=False, default="pretty"
     )
