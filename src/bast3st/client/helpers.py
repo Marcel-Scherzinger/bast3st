@@ -1,25 +1,30 @@
 import argparse
-import urllib.parse
-import http.client
 import json
 import pathlib
 import zipfile
+import requests
 
 from bast3st.spec import Bast3StSpec
+from bast3st.version import VERSION
 
 
 def send_request(method, uri: str, json_body: dict | None = None):
-    url = urllib.parse.urlparse(uri)
-
-    conn = http.client.HTTPConnection(url.hostname or "", port=url.port)
-    conn.request(
-        method.upper(),
-        url.path,
-        body=json.dumps(json_body) if json_body else None,
-        headers={"Content-Type": "application/json"},
-    )
-    resp = conn.getresponse()
-    return resp
+    if method.lower() == "get":
+        return requests.get(
+            uri,
+            headers={
+                "User-Agent": f"bast3st-py/{VERSION}",
+            },
+        )
+    elif method.lower() == "post":
+        return requests.post(
+            uri,
+            json=json_body,
+            headers={
+                "User-Agent": f"bast3st-py/{VERSION}",
+            },
+        )
+    assert False, "neither get nor post"
 
 
 def get_program_json(doc: pathlib.Path | str | dict) -> dict:

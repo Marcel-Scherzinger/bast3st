@@ -22,4 +22,5 @@ from bast3st.actions import (
     end_this_test_immediatly,
     fail_this_test_immediatly,
 )
-from bast3st.client import main
+from bast3st.client import Client
+from bast3st.spec_cli import main

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import json
 import logging
 import os
 import pathlib
@@ -80,7 +79,7 @@ class Client:
             "get",
             urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/health"),
         )
-        return resp.status
+        return resp.status_code
 
     def upload_spec(
         self, *, user: str, password: str, slot: str, spec: dict | Bast3StSpec
@@ -97,17 +96,16 @@ class Client:
                 "password": password,
             },
         )
-        if resp.status == 201:
+        status = resp.status_code
+        if status == 201:
             return None
-        if resp.status == 403:
-            return UploadSpecError("password", resp.read())
-        if resp.status == 424:
-            return UploadSpecError("spec", resp.read())
-        if resp.status == 500:
-            return UploadSpecError("server", resp.read())
-        return UploadSpecError(
-            kind="unknown", data=dict(status=resp.status, data=resp.read())
-        )
+        if status == 403:
+            return UploadSpecError("password", resp.text)
+        if status == 424:
+            return UploadSpecError("spec", resp.text)
+        if status == 500:
+            return UploadSpecError("server", resp.text)
+        return UploadSpecError(kind="unknown", data=dict(status=status, data=resp.text))
 
     def debug_spec(
         self,
@@ -131,17 +129,16 @@ class Client:
                 "session": session,
             },
         )
-        if resp.status == 200:
-            return SpecReport.from_json(json.load(resp))
-        if resp.status == 422:
-            return DebugSpecError("program", resp.read())
-        if resp.status == 424:
-            return DebugSpecError("spec", resp.read())
-        if resp.status == 500:
-            return DebugSpecError("server", resp.read())
-        return DebugSpecError(
-            kind="unknown", data=dict(status=resp.status, data=resp.read())
-        )
+        status = resp.status_code
+        if status == 200:
+            return SpecReport.from_json(resp.json())
+        if status == 422:
+            return DebugSpecError("program", resp.text)
+        if status == 424:
+            return DebugSpecError("spec", resp.text)
+        if status == 500:
+            return DebugSpecError("server", resp.text)
+        return DebugSpecError(kind="unknown", data=dict(status=status, data=resp.text))
 
     def submit_program(
         self,
@@ -166,18 +163,19 @@ class Client:
                 "session": session,
             },
         )
-        if resp.status == 200:
-            return SpecReport.from_json(json.load(resp))
-        if resp.status == 400:
-            return SubmitProgramError("user/slot", resp.read())
-        if resp.status == 422:
-            return SubmitProgramError("program", resp.read())
-        if resp.status == 424:
-            return SubmitProgramError("spec", resp.read())
-        if resp.status == 500:
-            return SubmitProgramError("server", resp.read())
+        status = resp.status_code
+        if status == 200:
+            return SpecReport.from_json(resp.json())
+        if status == 400:
+            return SubmitProgramError("user/slot", resp.text)
+        if status == 422:
+            return SubmitProgramError("program", resp.text)
+        if status == 424:
+            return SubmitProgramError("spec", resp.text)
+        if status == 500:
+            return SubmitProgramError("server", resp.text)
         return SubmitProgramError(
-            kind="unknown", data=dict(status=resp.status, data=resp.read())
+            kind="unknown", data=dict(status=status, data=resp.text)
         )
 
     def start_password_reset(
@@ -188,15 +186,16 @@ class Client:
             urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/account/pwdreset"),
             json_body={"username": username, "password": password},
         )
+        status = resp.status_code
 
-        if resp.status == 200:
-            return resp.read().decode("utf8")
-        elif resp.status == 403:
-            return PasswordResetError("forbidden", data=resp.read())
-        elif resp.status == 500:
-            return PasswordResetError("server", data=resp.read())
+        if status == 200:
+            return resp.text
+        elif status == 403:
+            return PasswordResetError("forbidden", data=resp.text)
+        elif status == 500:
+            return PasswordResetError("server", data=resp.text)
         else:
-            return PasswordResetError("unknown", data=resp.read())
+            return PasswordResetError("unknown", data=resp.text)
 
     def confirm_password_reset(
         self, username: str, password: str, new_password: str
@@ -212,14 +211,16 @@ class Client:
                 "new-password": new_password,
             },
         )
+        status = resp.status_code
+        data = resp.text
 
-        if resp.status == 200:
+        if status == 200:
             return None
-        elif resp.status == 403:
-            return PasswordResetConfirmError("forbidden", data=resp.read())
-        elif resp.status == 409:
-            return PasswordResetConfirmError("conflict", data=resp.read())
-        elif resp.status == 500:
-            return PasswordResetConfirmError("server", data=resp.read())
+        elif status == 403:
+            return PasswordResetConfirmError("forbidden", data=data)
+        elif status == 409:
+            return PasswordResetConfirmError("conflict", data=data)
+        elif status == 500:
+            return PasswordResetConfirmError("server", data=data)
         else:
-            return PasswordResetConfirmError("unknown", data=resp.read())
+            return PasswordResetConfirmError("unknown", data=data)

@@ -7,7 +7,6 @@ import logging
 import os
 
 from bast3st.client.client import Client
-from bast3st.client.helpers import parse_exercise_id
 from bast3st.client.report import SpecReport
 
 
@@ -91,7 +90,11 @@ def run_admin_users(args) -> int:
 
 
 def run_submit(args):
-    user, slot = args.exercise
+    user, slot = args.user, args.slot
+    user = user or os.environ.get("BAST3ST_USERNAME", None)
+    if user is None:
+        logging.error("You have to provide --user or set BAST3ST_USERNAME")
+        exit(13)
     client = Client.require(url=args.url)
     rep = client.submit_program(user=user, slot=slot, program=args.program)
     if isinstance(rep, SpecReport):
@@ -113,7 +116,7 @@ def run():
         action="store_true",
         help="quiet output on stdout, only data without labels",
     )
-    parser.add_argument("-u", "--url", type=str, required=False)
+    parser.add_argument("--url", type=str, required=False)
 
     subparsers = parser.add_subparsers(required=True)
 
@@ -140,9 +143,8 @@ def run():
         "--width", type=int, help="terminal width to use, defaults to available"
     )
     sub_submit.add_argument("program", type=pathlib.Path)
-    sub_submit.add_argument(
-        "-e", "--exercise", type=parse_exercise_id, metavar="USER/SLOT", required=True
-    )
+    sub_submit.add_argument("-u", "--user", type=str, required=False)
+    sub_submit.add_argument("-s", "--slot", type=str, required=True)
     sub_submit.set_defaults(func=run_submit)
 
     parsed = parser.parse_args()
