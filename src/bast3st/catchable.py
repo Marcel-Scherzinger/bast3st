@@ -31,6 +31,16 @@ class err(enum.Flag):
     network_respInvalid_notJson = enum.auto()
     #: the administrator doesn't allow contacting the specified server
     network_policy_serverNotAllowed = enum.auto()
+    #: the administrator doesn't allow using the specified scheme (=https, http, file, ...)
+    network_policy_schemeNotAllowed = enum.auto()
+    #: the administrator doesn't allow the request for some reason
+    network_policy_other = enum.auto()
+    network_policy = (
+        network_policy_serverNotAllowed
+        | network_policy_schemeNotAllowed
+        | network_policy_other
+    )
+
     #: networking can always fail, this error indicates that the program tried to
     #: execute the request but something failed that wasn't in the program's control
     network_external = enum.auto()
@@ -40,7 +50,7 @@ class err(enum.Flag):
     network = (
         network_respInvalid_notJson
         | network_statusDisallowed
-        | network_policy_serverNotAllowed
+        | network_policy
         | network_external
         | network_url_syntax
     )

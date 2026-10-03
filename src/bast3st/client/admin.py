@@ -54,7 +54,7 @@ class AdminClient:
             "get",
             urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/health"),
         )
-        return resp.status
+        return resp.status_code
 
     def register_user(self, username: str) -> str | AdminRegisterUserError:
         """Returns the created password for the user or an error"""
@@ -63,14 +63,15 @@ class AdminClient:
             urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/register"),
             json_body={"user": username},
         )
-        if resp.status == 200:
-            return resp.read().decode("utf8")
-        if resp.status == 409:
+        status = resp.status_code
+        if status == 200:
+            return resp.text
+        if status == 409:
             return AdminRegisterUserError(kind="already-there")
-        if resp.status == 500:
+        if status == 500:
             return AdminRegisterUserError(kind="server")
         return AdminRegisterUserError(
-            kind="unknown", data=dict(status=resp.status, data=resp.read())
+            kind="unknown", data=dict(status=status, data=resp.text)
         )
 
     def reset_user_password(self, username: str) -> str | AdminResetUserPwdError:
@@ -80,12 +81,13 @@ class AdminClient:
             urllib.parse.urljoin(self.parsed_url.geturl(), "/v2/api/admin/pwdreset"),
             json_body={"user": username},
         )
-        if resp.status == 200:
-            return resp.read().decode("utf8")
-        if resp.status == 409:
+        status = resp.status_code
+        if status == 200:
+            return resp.text
+        if status == 409:
             return AdminResetUserPwdError(kind="not-found")
-        if resp.status == 500:
+        if status == 500:
             return AdminResetUserPwdError(kind="server")
         return AdminResetUserPwdError(
-            kind="unknown", data=dict(status=resp.status, data=resp.read())
+            kind="unknown", data=dict(status=status, data=resp.text)
         )

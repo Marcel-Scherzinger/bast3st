@@ -1,5 +1,4 @@
-from os import strerror
-from sys import is_finalizing
+import json
 from typing import Any, Literal, Mapping
 
 import dataclasses
@@ -131,10 +130,20 @@ class Message:
 class TestStatus:
     is_fulfilled: bool
     fexp: str | None = None
+    error: dict | None = None
     inner: dict
 
     @classmethod
     def from_json(cls, val: dict):
+        if "criterion" not in val:
+            if "just-fail-test-run" in val:
+                return TestStatus(
+                    is_fulfilled=False,
+                    fexp=None,
+                    error=val["just-fail-test-run"],
+                    inner=val,
+                )
+
         f = val["criterion"]["fulfilled"]
         i = val["criterion"]["inner"]
         if "Ok" in f:

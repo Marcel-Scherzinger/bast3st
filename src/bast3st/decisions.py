@@ -1181,7 +1181,7 @@ class NetworkRequest(FutureMapping[Features | Features2 | Features3]):
             route=Value.of(route),
             method=method,
             json=json,
-            **{"allowed-status": list[allowed_status]},
+            **{"allowed-status": [ForceInline(a) for a in allowed_status]},
         )
 
 
