@@ -13,7 +13,7 @@ def send_request(method, uri: str, json_body: dict | None = None):
         return requests.get(
             uri,
             headers={
-                "User-Agent": f"bast3st-py/{VERSION}",
+                "User-Agent": f"bast3st/{VERSION}",
             },
         )
     elif method.lower() == "post":
@@ -21,7 +21,7 @@ def send_request(method, uri: str, json_body: dict | None = None):
             uri,
             json=json_body,
             headers={
-                "User-Agent": f"bast3st-py/{VERSION}",
+                "User-Agent": f"bast3st/{VERSION}",
             },
         )
     assert False, "neither get nor post"

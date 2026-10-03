@@ -203,11 +203,11 @@ Using the admin API
 
 You can interact with the server like in :ref:`serveradmin-jailbreak`
 by sending manual network requests (from your computer), but an easier
-way might be to use `github:marcel-scherzinger/bast3st-py <https://github.com/marcel-scherzinger/bast3st-py>`_:
+way might be to use `github:marcel-scherzinger/bast3st <https://github.com/marcel-scherzinger/bast3st>`_:
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st-py -- admin users -h
+    $ nix run github:marcel-scherzinger/bast3st -- admin users -h
     usage: bast3st admin users [-h] [-a {register,reset}] username
 
     positional arguments:
@@ -225,12 +225,12 @@ use `http://localhost:42039`, this should **always** be ok,
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st-py -- admin users -a register ferris
+    $ nix run github:marcel-scherzinger/bast3st -- admin users -a register ferris
     Registered user 'ferris' with password: XuLLAtq3WcykatGZmDzkjEsFbWygccNz3qE8PgEKJ3
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st-py -- admin users -a reset ferris
+    $ nix run github:marcel-scherzinger/bast3st -- admin users -a reset ferris
     The password of 'ferris' is now: gc2VVLQyw3MTgP2fGd22FCp9We4enNtdHZD85vsWMF
 
 The passwords are selected randomly by the server and you have no way
@@ -242,7 +242,7 @@ If you see the following error, there is no server you can talk to:
 
 .. code-block:: console
 
-   $ nix run github:marcel-scherzinger/bast3st-py -- admin users -a register ferris
+   $ nix run github:marcel-scherzinger/bast3st -- admin users -a register ferris
    ERROR:root:Admin server at 'http://localhost:42039' misbehaved: HTTPConnectionPool(host='localhost', port=42039): Max retries exceeded with url: /v2/api/admin/health (Caused by NewConnectionError("HTTPConnection(host='localhost', port=42039): Failed to establish a new connection: [Errno 111] Connection refused"))
 
 .. code-block:: console
