@@ -35,6 +35,7 @@
             sphinx-rtd-theme
             sphinx-autodoc-typehints # not used
             sphinx-autobuild
+            sphinx-copybutton
           ]);
       in {
         devShells.default = pkgs.mkShell {

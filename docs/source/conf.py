@@ -25,6 +25,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
+    "sphinx_copybutton",
     # "sphinx_autodoc_typehints",
 ]
 
@@ -62,3 +63,6 @@ autodoc_default_options = {
 intersphinx_mapping = {"python": ("https://docs.python.org/3.14", None)}
 
 todo_include_todos = os.environ.get("INCLUDE_TODOS") is not None
+
+copybutton_exclude = ".linenos, .gp, .go"
+copybutton_copy_empty_lines = False

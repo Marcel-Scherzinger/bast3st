@@ -24,6 +24,8 @@ Bast3St documentation
    :caption: Contents
 
    concepts
+   user
+   server
    reference
 
 
