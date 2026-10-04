@@ -95,6 +95,14 @@ you'll likely want to change. For this, create a new file (e. g. named
     # password = 
     # port = 5432
 
+    # see the network section for details
+    [policy.network.first-script]
+    command = "false"
+    args = []                      # defaults to []
+
+    # [policy.network.second-script]
+    # command = "dummy-command-2"
+
 .. code-block:: console
 
    $ RUST_LOG=warn bast3st-backend bast3st.toml
@@ -118,6 +126,94 @@ You will probably see something like this:
    not prevent anyone else communicating with the server, it will only
    ask the browsers of your users to not allow other sites to use your
    API to prevent e. g. malicious frontends that do extra stuff.
+
+.. _server-network:
+
+Network
+=======
+
+As the rules for allowing specific network requests and others not can be complicated,
+the decision is made by calling configurable scripts from `bast3st.toml`.
+
+If you don't configure any scripts, all network requests will be forbidden.
+
+You can configure multiple *named* scripts that will be processed in alphabetical order,
+where all scripts have to agree with a network request to let it through:
+
+.. code-block:: toml
+
+    # ...
+
+    # this policy completly forbids any network requests by calling the UNIX false-command
+    [policy.network.never]
+    command = "false"
+
+    [policy.network.my-script]
+    command = "/srv/bast3st-scripts/my-script.py"
+    args = ["--test", "3"] # cli flags
+
+    # ...
+
+This configuration will first try `my-script` (as **m** comes for **n**)
+and if it succeeds will try `never`, which will always fail and forbid the
+request, so this configuration is not that useful.
+
+Each script will be called with one line of input via standard in (stdin),
+that is guaranteed to be JSON containing the request data.
+The program then needs to exit with code 0 for allowing and with any other exit code
+for forbidding the request.
+Output from the scripts can be found in the `DEBUG`-logs of the server.
+
+The json can best be described with following example script:
+
+.. code-block:: python
+
+    #!/usr/bin/env python3
+    from typing import TypedDict
+    import json
+
+
+    class AllowNetworkCmdInput(TypedDict):
+        # not set for "debug" requests
+        user: str | None
+        # not set for "debug" requests
+        slot: str | None
+        # http/https/...
+        scheme: str
+        # domain/ip/...
+        host: str | None
+        port: int | None
+        path: str
+        query: list[tuple[str, str]]
+        # the original url
+        url: str
+        # request data like the json that should be sent
+        data: dict
+
+
+    data: AllowNetworkCmdInput = json.loads(input())
+
+    if data["scheme"] == "https":
+        exit(0)
+    else:
+        exit(1)
+
+.. caution::
+
+   As the data you receive was originally from a possibly malicious user, you should
+   be careful when accepting data and even more careful when making assumptions about
+   what values might be or what they'll probably never be.
+   A good first step is to check with very specific logic what to allow and not what
+   to forbid, so that stuff in weird formats that you didn't thought of will be forbidden.
+
+   Allow only as much as really needed, as malicious network requests coming
+   from your server can have **legal consequences** for you.
+
+.. note::
+
+   The server only allows the schemes `http` and `https` and it will always forbid
+   to communicate with servers on the port that is used by the admin API if it is
+   active and there is nothing such a script could do about this.
 
 .. _server-admin:
 
@@ -149,7 +245,7 @@ required users, what is definitly the safest option.
 Jailbreaking
 ------------
 
-As the server allows users to do nearly arbitrary network requests,
+As a badly configured server allows users to do nearly arbitrary network requests,
 one could also try to write the following test specification:
 
 .. code-block:: python
@@ -181,8 +277,8 @@ one could also try to write the following test specification:
         main(spec)
 
 
-As the normal server normally is on the same host as the admin API,
-it is allowed to communicate to it on a network-level.
+As the normal server typically is on the same host as the admin API,
+it would be allowed to communicate to it on a network-level.
 To prevent this jailbreak, the server will block all requests from
 user specifications that try to access the same port that is used to
 run the admin API. Without this protection, anyone with access to the
@@ -207,7 +303,7 @@ way might be to use `github:marcel-scherzinger/bast3st <https://github.com/marce
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st -- admin users -h
+    $ uvx bast3st -- admin users -h
     usage: bast3st admin users [-h] [-a {register,reset}] username
 
     positional arguments:
@@ -225,12 +321,12 @@ use `http://localhost:42039`, this should **always** be ok,
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st -- admin users -a register ferris
+    $ uvx bast3st -- admin users -a register ferris
     Registered user 'ferris' with password: XuLLAtq3WcykatGZmDzkjEsFbWygccNz3qE8PgEKJ3
 
 .. code-block:: console
 
-    $ nix run github:marcel-scherzinger/bast3st -- admin users -a reset ferris
+    $ uvx bast3st -- admin users -a reset ferris
     The password of 'ferris' is now: gc2VVLQyw3MTgP2fGd22FCp9We4enNtdHZD85vsWMF
 
 The passwords are selected randomly by the server and you have no way
@@ -242,7 +338,7 @@ If you see the following error, there is no server you can talk to:
 
 .. code-block:: console
 
-   $ nix run github:marcel-scherzinger/bast3st -- admin users -a register ferris
+   $ uvx bast3st -- admin users -a register ferris
    ERROR:root:Admin server at 'http://localhost:42039' misbehaved: HTTPConnectionPool(host='localhost', port=42039): Max retries exceeded with url: /v2/api/admin/health (Caused by NewConnectionError("HTTPConnection(host='localhost', port=42039): Failed to establish a new connection: [Errno 111] Connection refused"))
 
 .. code-block:: console
