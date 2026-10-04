@@ -7,6 +7,15 @@ docs:
 examples:
     make clean examples
 
+# updates version number, commits EVERY FILE and tags
+commit-as-release FIRST-BUMP *ARGS:
+    #!/usr/bin/env bash
+    set -e pipefail
+    uv version --bump {{FIRST-BUMP}} {{ARGS}}
+    git add --all
+    git commit
+    git tag v$(uv version --short)
+
 # updates version number, commits and tags
 release FIRST-BUMP *ARGS:
     #!/usr/bin/env bash
@@ -16,4 +25,4 @@ release FIRST-BUMP *ARGS:
     uv version --bump {{FIRST-BUMP}} {{ARGS}}
     git add uv.lock pyproject.toml
     git commit
-    git tag $(uv version --short)
+    git tag v$(uv version --short)
