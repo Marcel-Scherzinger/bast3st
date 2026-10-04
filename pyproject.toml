@@ -8,6 +8,13 @@ dependencies = [
     "requests>=2.34.2",
 ]
 
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.14",
+]
+keywords = ["sb3"]
+
 [project.scripts]
 bast3st = "bast3st.cli:run"
 
@@ -27,4 +34,10 @@ docs = [
     "sphinx-copybutton>=0.5.2",
     "sphinx-rtd-theme>=3.1.0",
 ]
+
+
+[project.urls]
+Homepage = "https://marcel-scherzinger.github.io/bast3st"
+Documentation = "https://marcel-scherzinger.github.io/bast3st"
+Repository = "https://github.com/marcel-scherzinger/bast3st"
 
