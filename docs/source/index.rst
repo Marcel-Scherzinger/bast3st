@@ -12,6 +12,9 @@ Bast3St documentation
 .. image:: https://img.shields.io/badge/Python%20version-%E2%89%A53.14-blue?logo=python&logoColor=white
    :alt: Python Version >= 3.14
    :target: https://python.org
+.. image:: https://img.shields.io/pypi/v/bast3st?label=PyPI
+   :alt: PyPI Version
+   :target: https://pypi.org/project/bast3st/
 .. image:: https://img.shields.io/badge/Nix-flake-purple?logo=nixos&logoColor=white
    :alt: Nix flake
    :target: https://nixos.org
