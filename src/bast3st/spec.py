@@ -330,7 +330,7 @@ class MainTest(AnyTest):
     def _to_json(self, ser) -> dict:
         base: dict = super()._to_json(ser)
         if len(self._alternatives) > 0:
-            base["alternatives"] = ([a._to_json(ser) for a in self._alternatives],)
+            base["alternatives"] = [a._to_json(ser) for a in self._alternatives]
         return base
 
 
