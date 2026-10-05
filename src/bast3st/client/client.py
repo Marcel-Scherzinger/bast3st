@@ -114,7 +114,8 @@ class Client:
         spec: dict | Bast3StSpec,
         agent: str = "cli",
         session: str | None = None,
-    ) -> SpecReport | DebugSpecError:
+        parse: bool = True,
+    ) -> SpecReport | dict | DebugSpecError:
         """Debug a specification with a scratch program"""
         program = get_program_json(program)
         spec = get_spec_json(spec)
@@ -131,7 +132,9 @@ class Client:
         )
         status = resp.status_code
         if status == 200:
-            return SpecReport.from_json(resp.json())
+            if parse:
+                return SpecReport.from_json(resp.json())
+            return resp.json()
         if status == 422:
             return DebugSpecError("program", resp.text)
         if status == 424:
@@ -148,7 +151,8 @@ class Client:
         program: dict | pathlib.Path | str,
         agent: str = "cli",
         session: str | None = None,
-    ) -> SpecReport | SubmitProgramError:
+        parse: bool = True,
+    ) -> SpecReport | dict | SubmitProgramError:
         """Submit a program to a given user/slot"""
         program = get_program_json(program)
 
@@ -165,7 +169,9 @@ class Client:
         )
         status = resp.status_code
         if status == 200:
-            return SpecReport.from_json(resp.json())
+            if parse:
+                return SpecReport.from_json(resp.json())
+            return resp.json()
         if status == 400:
             return SubmitProgramError("user/slot", resp.text)
         if status == 422:

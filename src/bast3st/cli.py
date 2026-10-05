@@ -1,4 +1,5 @@
 import argparse
+import json
 import pathlib
 import shutil
 
@@ -96,16 +97,26 @@ def run_submit(args):
         logging.error("You have to provide --user or set BAST3ST_USERNAME")
         exit(13)
     client = Client.require(url=args.url)
-    rep = client.submit_program(user=user, slot=slot, program=args.program)
-    if isinstance(rep, SpecReport):
-        if args.format == "pretty":
-            width = args.width or (shutil.get_terminal_size().columns)
-            print(rep.to_pretty(width))
+    if args.format == "json":
+        rep = client.submit_program(
+            user=user, slot=slot, program=args.program, parse=False
+        )
+        if isinstance(rep, dict):
+            print(json.dumps(rep))
         else:
-            print(repr(rep))
+            logging.error(f"{rep}")
+            exit(13)
     else:
-        logging.error(f"{rep}")
-        exit(13)
+        rep = client.submit_program(user=user, slot=slot, program=args.program)
+        if isinstance(rep, SpecReport):
+            if args.format == "pretty":
+                width = args.width or (shutil.get_terminal_size().columns)
+                print(rep.to_pretty(width))
+            else:
+                print(repr(rep))
+        else:
+            logging.error(f"{rep}")
+            exit(13)
 
 
 def run():
@@ -137,7 +148,11 @@ def run():
         "submit", help="submit a program to a specific user/slot exercise"
     )
     sub_submit.add_argument(
-        "-f", "--format", choices=["pretty", "repr"], required=False, default="pretty"
+        "-f",
+        "--format",
+        choices=["pretty", "repr", "json"],
+        required=False,
+        default="pretty",
     )
     sub_submit.add_argument(
         "--width", type=int, help="terminal width to use, defaults to available"

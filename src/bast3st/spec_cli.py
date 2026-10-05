@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 import pathlib
@@ -24,15 +25,22 @@ def run_export(spec: Bast3StSpec, args):
 
 
 def debug_spec(
-    program: dict, spec: Bast3StSpec, program_name: str | None = None, url=None
-) -> SpecReport:
+    program: dict,
+    spec: Bast3StSpec,
+    program_name: str | None = None,
+    url=None,
+    parse: bool = True,
+) -> SpecReport | dict:
     program_name = program_name or get_program_name()
 
     client = Client.require(url)
-    rep = client.debug_spec(program=program, spec=spec)
-    if not isinstance(rep, SpecReport):
-        raise ValueError(f"{rep!r}")
-
+    rep = client.debug_spec(program=program, spec=spec, parse=parse)
+    if parse:
+        if not isinstance(rep, SpecReport):
+            raise ValueError(f"{rep!r}")
+    else:
+        if not isinstance(rep, dict):
+            raise ValueError(f"{rep!r}")
     return rep
 
 
@@ -40,12 +48,16 @@ def run_test(spec: Bast3StSpec, args):
     program_path: pathlib.Path = args.program
     program = get_program_json(program_path)
 
-    rep = debug_spec(program=program, spec=spec, url=args.url)
-    if args.format == "pretty":
-        width = args.width or (shutil.get_terminal_size().columns)
-        print(rep.to_pretty(width))
+    if args.format == "json":
+        rep = debug_spec(program=program, spec=spec, url=args.url, parse=False)
+        print(json.dumps(rep))
     else:
-        print(repr(rep))
+        rep = debug_spec(program=program, spec=spec, url=args.url)
+        if args.format == "pretty":
+            width = args.width or (shutil.get_terminal_size().columns)
+            print(rep.to_pretty(width))  # type: ignore
+        else:
+            print(repr(rep))
 
 
 def run_upload(spec, args):
@@ -98,7 +110,11 @@ def main(spec: Bast3StSpec):
         "--width", type=int, help="terminal width to use, defaults to available"
     )
     sub_test.add_argument(
-        "-f", "--format", choices=["pretty", "repr"], required=False, default="pretty"
+        "-f",
+        "--format",
+        choices=["pretty", "repr", "json"],
+        required=False,
+        default="pretty",
     )
 
     ######################
