@@ -1,6 +1,6 @@
 from bast3st import Bast3StSpec, OUTPUT, main
 from bast3st.actions import set_flag
-from bast3st.decisions import FLAGS, PARAM
+from bast3st.decisions import FLAGS
 from bast3st.spec import Category
 
 

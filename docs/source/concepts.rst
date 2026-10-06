@@ -243,32 +243,32 @@ Execution order of a test specification
            *that should be run before the actual test*
         6. evaluate the main test's :class:`Criterion<bast3st.decisions.Criterion>`
            to decide if the test should be passed 
-        7. **If the main test failed**, *run hooks of*
+        7. *run hooks of* :class:`MainTest<bast3st.spec.MainTest>`
+           that should be run *after the actual test*
+        8. **If the main test failed**, *run hooks of*
            :class:`MainTest<bast3st.spec.MainTest>`
            *that should be run after the main test but before the*
            *alternative tests*
-        8. **If the main test failed**, process each
+        9. **If the main test failed**, process each
            :class:`AlternativeTest<bast3st.spec.AlternativeTest>`
            in order until one passes or all were tried:
             
-            9. *run hooks of*
-               :class:`AlternativeTest<bast3st.spec.AlternativeTest>`
-               *that should be run before the alternative test*
-            10. evaluate the alternative test's :class:`Criterion<bast3st.decisions.Criterion>`
+            10. *run hooks of* :class:`AlternativeTest<bast3st.spec.AlternativeTest>` *that should be run before the alternative test*
+            11. evaluate the alternative test's :class:`Criterion<bast3st.decisions.Criterion>`
                 to decide if the test should be passed.
-                (if so, run 11 but proceed to 12 without trying 8 again)
-            11. *run hooks of*
+                (if so, run 12 but proceed to 13 without trying 9 again)
+            12. *run hooks of*
                 :class:`AlternativeTest<bast3st.spec.AlternativeTest>`
                 *that should be run after the alternative test*
 
-        12. *run hooks of* :class:`MainTest<bast3st.spec.MainTest>`
+        13. *run hooks of* :class:`MainTest<bast3st.spec.MainTest>`
             *that should be run after the main test and after the*
             *alternative tests*
 
-    13. *run hooks of* :class:`Category<bast3st.spec.Category>`
+    14. *run hooks of* :class:`Category<bast3st.spec.Category>`
         *that should be run after all tests of this category*
 
-14. *run hooks of* :class:`specification<bast3st.spec.Bast3StSpec>`
+15. *run hooks of* :class:`specification<bast3st.spec.Bast3StSpec>`
     *that should be run after all categories*
 
 .. note::
@@ -381,7 +381,6 @@ and are grouped into multi-level scopes::
                 }
             }
         },
-        "my": PARAMETERS-FROM-AUTHOR-ACCOUNT
     }
 
 The `opcode` mapping contains a value for every block-kind the submission used.
