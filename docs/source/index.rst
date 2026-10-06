@@ -29,6 +29,7 @@ Bast3St documentation
    :maxdepth: 2
    :caption: Contents
 
+   about
    concepts
    user
    server
