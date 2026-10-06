@@ -305,7 +305,6 @@ class AlternativeTest:
     title: str
     status: TestStatus
     messages: list[Message] = field(default_factory=list)
-    alternatives: list[AlternativeTest] = field(default_factory=list)
     hooks: AlternativeTestHooks = field(default_factory=AlternativeTestHooks)
     data: Rundata | None = None
 
@@ -322,7 +321,13 @@ class AlternativeTest:
         )
 
     def to_pretty(self, width: int, relation: Relation = None):
-        return wrap(repr(self), width=width)
+        text = wrap(self.title, width=width)
+        text += self.status.to_pretty(width)
+        text += output_list(self.messages, width, label="messages")
+        text += output_list(self.hooks.before_alt, label="before-alt", width=width)
+        text += add_block(self.data, label="data", width=width)
+        text += output_list(self.hooks.after_alt, label="after-alt", width=width)
+        return text
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

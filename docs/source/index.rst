@@ -6,9 +6,9 @@
 Bast3St documentation
 =====================
 
-.. image:: https://github.com/marcel-scherzinger/bast3st/actions/workflows/documentation.yml/badge.svg
-   :alt: Documentation on GitHub Pages
-   :target: https://marcel-scherzinger.github.io/bast3st
+.. image:: https://img.shields.io/badge/Repository-GitHub-blue?logo=github
+   :alt: Repository
+   :target: https://github.com/marcel-scherzinger/bast3st
 .. image:: https://img.shields.io/badge/Python%20version-%E2%89%A53.14-blue?logo=python&logoColor=white
    :alt: Python Version >= 3.14
    :target: https://python.org

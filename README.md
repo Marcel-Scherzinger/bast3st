@@ -1,3 +1,4 @@
+[![Project page](https://img.shields.io/badge/Project-Bast3St-pink)](https://marcel-scherzinger.github.io/bast3st)
 [![Documentation on GitHub Pages](https://github.com/marcel-scherzinger/bast3st/actions/workflows/documentation.yml/badge.svg)](https://marcel-scherzinger.github.io/bast3st)
 ![Python Version >= 3.14](https://img.shields.io/badge/Python%20version-%E2%89%A53.14-blue?logo=python&logoColor=white)
 [![PyPI Version](https://img.shields.io/pypi/v/bast3st?label=PyPI)](https://pypi.org/project/bast3st/)

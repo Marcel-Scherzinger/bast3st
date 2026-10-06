@@ -1,6 +1,6 @@
 [project]
 name = "bast3st"
-version = "0.1.1b1"
+version = "0.1.2b1"
 description = "Specification of unit tests of .sb3-programs for a Bast3St server"
 readme = "README.md"
 requires-python = ">=3.14" # t-strings

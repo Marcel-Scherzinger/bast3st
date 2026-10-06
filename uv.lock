@@ -35,7 +35,7 @@ wheels = [
 
 [[package]]
 name = "bast3st"
-version = "0.1.1b1"
+version = "0.1.2b1"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },
