@@ -1,4 +1,3 @@
-import json
 from typing import Any, Literal, Mapping
 
 import dataclasses
@@ -91,7 +90,7 @@ class RuntimeCriterion:
         line = nw + dash + " " + status + " " + dash * (width - 5 - len(status)) + ne
 
         content = attributes + (
-            f"\n{'-' * (width - 1)}\n{self.failure_explaination}"
+            f"\n{'-' * (width - 4)}\n{self.failure_explaination}"
             if self.failure_explaination is not None
             else ""
         )
@@ -128,40 +127,59 @@ class Message:
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class TestStatus:
-    is_fulfilled: bool
-    fexp: str | None = None
-    error: dict | None = None
+    passed: bool
+    variant: Literal["ended-by-action", "criterion", "evalerr", "just-fail-test-run"]
+    explaination: str | None = None
     inner: dict
 
     @classmethod
-    def from_json(cls, val: dict):
-        if "criterion" not in val:
-            if "just-fail-test-run" in val:
+    def from_json(cls, passed: bool, val: dict):
+        if "criterion" in val:
+            f = val["criterion"]["fulfilled"]
+            if "Ok" in f:
+                return cls(passed=passed, variant="criterion", inner=val["criterion"])
+            else:
+                return cls(
+                    passed=passed,
+                    variant="criterion",
+                    inner=val["criterion"],
+                    explaination=f.get("Err", None),
+                )
+        if "ended-by-action" in val:
+            mode = val["ended-by-action"]["mode"]
+            explaination = val["ended-by-action"]["explaination"]
+            if mode == "pass":
                 return TestStatus(
-                    is_fulfilled=False,
-                    fexp=None,
-                    error=val["just-fail-test-run"],
+                    passed=passed,
+                    variant="ended-by-action",
+                    explaination=explaination,
                     inner=val,
                 )
-
-        f = val["criterion"]["fulfilled"]
-        i = val["criterion"]["inner"]
-        if "Ok" in f:
-            return cls(is_fulfilled=True, inner=i)
-        else:
-            return cls(is_fulfilled=False, inner=i, fexp=f.get("Err", None))
+            return TestStatus(
+                passed=passed,
+                variant="ended-by-action",
+                explaination=explaination,
+                inner=val,
+            )
+        if "eval" in val:
+            return TestStatus(passed=passed, variant="evalerr", inner=val["eval"])
+        if "just-fail-test-run" in val:
+            return TestStatus(
+                passed=passed,
+                variant="just-fail-test-run",
+                explaination=None,
+                inner=val["just-fail-test-run"],
+            )
+        raise ValueError(f"invalid test status: {val}")
 
     def to_pretty(self, width: int) -> str:
         text = ""
-        if self.is_fulfilled:
+        if self.passed:
             text += "This test passed!\n"
         else:
-            text += "This test failed :(  " + (self.fexp or "") + "\n"
+            text += "This test failed :(  " + (self.explaination or "") + "\n"
         text += str(self.inner)
         return wrap(text, width)
-
-    def __str__(self) -> str:
-        return str(self.is_fulfilled) + f" || {self.fexp} || " + str(self.inner)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -295,11 +313,16 @@ class AlternativeTest:
     def from_json(cls, val: dict):
         return AlternativeTest(
             title=val["general"]["title"],
-            status=TestStatus.from_json(val["general"]["status"]),
+            status=TestStatus.from_json(
+                val["general"]["is-passed"], val["general"]["status"]
+            ),
             messages=list(map(Message.from_json, val.get("messages", []))),
             data=Rundata.from_json(val["general"].get("data", {})),
             hooks=AlternativeTestHooks.from_json(val.get("hooks", {})),
         )
+
+    def to_pretty(self, width: int, relation: Relation = None):
+        return wrap(repr(self), width=width)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -315,13 +338,15 @@ class MainTest:
     def from_json(cls, val):
         return MainTest(
             title=val["general"]["title"],
-            status=TestStatus.from_json(val["general"]["status"]),
+            status=TestStatus.from_json(
+                val["general"]["is-passed"], val["general"]["status"]
+            ),
             messages=list(map(Message.from_json, val.get("messages", []))),
             alternatives=list(
-                map(AlternativeTest.from_json, val.get("alternatives", []))
+                map(AlternativeTest.from_json, val.get("tried-alternatives", []))
             ),
             data=Rundata.from_json(val["general"].get("data", {})),
-            hooks=MainTestHooks.from_json(val.get("hooks", {})),
+            hooks=MainTestHooks.from_json(val["general"].get("hooks", {})),
         )
 
     def to_pretty(self, width: int, relation: Relation = None):
@@ -330,7 +355,7 @@ class MainTest:
         lver = box_sym(relation, "|")
         rver = box_sym(relation, "|")
 
-        if not self.status.is_fulfilled:
+        if not self.status.passed:
             lver = "█"
 
         text = f"{nw}─{'─' * (width - 4)}─{ne}\n" + indent(
