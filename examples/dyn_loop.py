@@ -22,12 +22,12 @@ def get_criterion(a, b):
 
 def main_test_for(category: Category, a: int, b: int):
     criterion = get_criterion(a, b)
-    mtest = category.new_test(f"{a} bis {b}", criterion=criterion, input=[b, a])
+    mtest = category.new_test(f"{a} bis {b}", criterion=criterion, input=[a, b])
     mtest.if_criterion_then(criterion, set_flag("points", f"{a}#{b}", value=2))
     alt_test = mtest.new_alternative_test(
         "Funktioniert es, wenn ich die Eingaben vertausche?",
         criterion=criterion,
-        input=[a, b],
+        input=[b, a],
     )
     alt_test.if_criterion_then(criterion, set_flag("points", f"{a}#{b}", value=1))
     return mtest
