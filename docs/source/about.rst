@@ -21,9 +21,12 @@ Repositories
 
 Bast3St is split into multiple repositories that build on each other, the most important ones are:
 
-- `github:marcel-scherzinger/scratch-test-value <https://github.com/marcel-scherzinger/scratch-test-value>`_: implements how Scratch defines computations like arithmetic operations or coercions
-- `github:marcel-scherzinger/scratch-test-model <https://github.com/marcel-scherzinger/scratch-test-model>`_: parses the Scratch-file-format :code:`sb3`
-- `github:marcel-scherzinger/scratch-test-interpreter <https://github.com/marcel-scherzinger/scratch-test-interpreter>`_: allows running a parsed Scratch program with given inputs and defined limits
+- `github:marcel-scherzinger/bast3st-scratch <https://github.com/marcel-scherzinger/bast3st-scratch>`_: direct handling of Scratch semantics and files
+
+    - `scratch-test-value <https://marcel-scherzinger.github.io/bast3st-scratch/scratch_test_value>`_: implements how Scratch defines computations like arithmetic operations or coercions
+    - `scratch-test-model <https://marcel-scherzinger.github.io/bast3st-scratch/scratch_test_model>`_: parses the Scratch-file-format :code:`sb3`
+    - `scratch-test-interpreter <https://marcel-scherzinger.github.io/bast3st-scratch/scratch_test_interpreter>`_: allows running a parsed Scratch program with given inputs and defined limits
+
 - `github:marcel-scherzinger/bast3st-eval <https://github.com/marcel-scherzinger/bast3st-eval>`_: takes JSON data that describes what a program should be tested for and creates a detailed report
 - `github:marcel-scherzinger/bast3st-web <https://github.com/marcel-scherzinger/bast3st-web>`_: listens for requests to analyze programs, responds with reports and stores everyting in a Postgres-database
 - `github:marcel-scherzinger/bast3st <https://github.com/marcel-scherzinger/bast3st>`_: Python library to generate JSON specifiactions by writing scripts with type hinting support and CLI program that allows interacting with a server
