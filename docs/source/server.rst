@@ -29,7 +29,7 @@ by using `cargo <https://doc.rust-lang.org/cargo/getting-started/installation.ht
 Nix
 ---
 
-The repository also declares a `Flake <https://nixos.wiki/wiki/flakes>`_ for the `Nix package manager <https://nixos.org/>`_, so you can add it to your system packages or run the application directly with Nix:
+The repository also declares a `Flake <https://nixos.wiki/wiki/flakes>`_ for the `Nix package manager <https://nixos.org/>`_, so you can `add it to your system packages <https://www.youtube.com/watch?v=CwfKlX3rA6E>`_ or run the application directly with Nix:
 
 .. code-block:: console
 
