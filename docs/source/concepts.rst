@@ -1,3 +1,5 @@
+.. _concepts:
+
 ########
 Concepts
 ########
@@ -385,7 +387,7 @@ and are grouped into multi-level scopes::
 
 The `opcode` mapping contains a value for every block-kind the submission used.
 See the Scratch wiki for a list of `official opcode-names <https://en.scratch-wiki.info/wiki/List_of_Block_Opcodes>`__
-but be aware that only the ones from `scratch-test-model/BlockKindUnit <https://marcel-scherzinger.github.io/scratch-test-model/scratch_test_model/blocks/enum.BlockKindUnit.html>`__ and co are detected by the application.
+but be aware that only the ones from `scratch-test-model/BlockKindUnit <https://marcel-scherzinger.github.io/bast3st-scratch/scratch_test_model/blocks/enum.BlockKindUnit.html>`__ and co are detected by the application.
 (detected doesn't mean supported and unsupported blocks will just be skipped during execution of a program if possible or cancel execution if not.)
 If you try to read an item from :code:`PARAM["doc", "blockcount", "opcode"]` that doesn't exist, you will receive 0 instead of an error.
 
